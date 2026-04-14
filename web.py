@@ -33,8 +33,43 @@ def index():
     link += "<a href=/account>POST傳值(帳號密碼)</a><hr>"
     link += "<a href=/math>數學運算</a><hr>"
     link += "<a href=/cup>擲茭</a><hr>"
+    link += "<a href=/search>查詢老師</a><hr>"
     link += "<br><a href=/read>讀取Firestore資料(根據lab遞減排序，取前四筆)</a><br>"
     return link
+
+
+@app.route("/search", methods=["GET", "POST"])
+def search():
+    if request.method == "POST":
+        keyword = request.form.get("keyword")
+        db = firestore.client()
+        # 取得所有老師資料
+        collection_ref = db.collection("靜宜資管2026")
+        docs = collection_ref.stream()
+        
+        result = f"<h1>查詢關鍵字：{keyword}</h1>"
+        found = False
+        for doc in docs:
+            user = doc.to_dict()
+            if keyword in user.get("name", ""):
+                result += f"<p>{user['name']} 老師的研究室是在 {user['lab']}</p>"
+                found = True
+        
+        if not found:
+            result += "<p>找不到符合條件的老師。</p>"
+        result += '<br><a href="/search">重新查詢</a> | <a href="/">回首頁</a>'
+        return result
+
+    # 這是原本顯示在網頁上的輸入框
+    return """
+        <h1>查詢老師研究室</h1>
+        <form method="POST">
+            請輸入老師姓名關鍵字：
+            <input type="text" name="keyword">
+            <button type="submit">查詢</button>
+        </form>
+        <br><a href="/">回首頁</a>
+    """
 
 @app.route("/read")
 def read():
