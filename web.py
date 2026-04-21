@@ -1,3 +1,6 @@
+import requests
+from bs4 import BeautifulSoup
+
 import os
 import json
 import firebase_admin
@@ -26,6 +29,7 @@ app = Flask(__name__) # 建立一個網站應用程式
 @app.route("/")
 def index():
     link = "<h1>歡迎進入小嵐的網站首頁</h1>"
+    link += "<a href=/spider>查詢即將上映電影</a><hr>"
     link += "<a href=/mis>課程</a><hr>"
     link += "<a href=/today>今天日期時間</a><hr>"
     link += "<a href=/about>關於小嵐</a><hr>"
@@ -70,6 +74,27 @@ def search():
         </form>
         <br><a href="/">回首頁</a>
     """
+
+@app.route("/spider")
+def spider():
+    url = "http://www.atmovies.com.tw/movie/next/"
+    Data = requests.get(url)
+    Data.encoding = "utf-8"
+
+    sp = BeautifulSoup(Data.text, "html.parser")
+    result=sp.find(".filmListAllX li")
+
+    output = "<h2>即將上映電影</h2>"
+    for item in result:
+        img_tag = item.find("img")
+        # 檢查是否有抓到 img 標籤以及 alt 屬性
+        if img_tag and img_tag.get("alt"):
+            title = img_tag.get("alt")
+            output += f"{title}<br>"
+            
+    output += "<a href='/'>回首頁</a>"
+    return output
+
 
 @app.route("/read")
 def read():
