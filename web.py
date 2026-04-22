@@ -82,17 +82,31 @@ def spider():
     Data.encoding = "utf-8"
 
     sp = BeautifulSoup(Data.text, "html.parser")
-    result=sp.find(".filmListAllX li")
+    # 開眼電影網的結構中，電影資訊通常在 .filmListAllX 的 li 標籤內
+    result = sp.select(".filmListAllX li")
 
     output = "<h2>即將上映電影</h2>"
+    output += "<ul>" # 使用列表讓排版更整齊
+
     for item in result:
-        img_tag = item.find("img")
-        # 檢查是否有抓到 img 標籤以及 alt 屬性
-        if img_tag and img_tag.get("alt"):
-            title = img_tag.get("alt")
-            output += f"{title}<br>"
+        # 1. 嘗試抓取 <a> 標籤獲取連結與名稱
+        a_tag = item.find("a")
+        if a_tag:
+            # 獲取連結 (加上開眼官網的前綴網址)
+            link = "http://www.atmovies.com.tw" + a_tag.get("href")
             
-    output += "<a href='/'>回首頁</a>"
+            # 2. 獲取電影名稱 (通常在 img 的 alt 屬性或是 a 標籤的 text)
+            img_tag = item.find("img")
+            if img_tag and img_tag.get("alt"):
+                title = img_tag.get("alt")
+            else:
+                title = a_tag.text.strip()
+            
+            # 3. 組合超連結 HTML
+            output += f"<li><a href='{link}' target='_blank'>{title}</a></li>"
+            
+    output += "</ul>"
+    output += "<br><a href='/'>回首頁</a>"
     return output
 
 
