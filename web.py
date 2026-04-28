@@ -39,6 +39,8 @@ def index():
     link += "<a href=/cup>擲茭</a><hr>"
     link += "<a href=/search>查詢老師</a><hr>"
     link += "<br><a href=/read>讀取Firestore資料(根據lab遞減排序，取前四筆)</a><br>"
+    link += "<br><a href=/movie>讀取開眼電影即將上映影片，寫入Firestore</a><br>"
+    link += "<a href=/searchQ>搜尋電影(Firestore查詢)</a><hr>"
     return link
 
 
@@ -213,6 +215,73 @@ def cup():
         
     return render_template('cup.html', result=result)
 
+@app.route("/movie")
+def movie():
+  url = "http://www.atmovies.com.tw/movie/next/"
+  Data = requests.get(url)
+  Data.encoding = "utf-8"
+  sp = BeautifulSoup(Data.text, "html.parser")
+  result=sp.select(".filmListAllX li")
+  lastUpdate = sp.find("div", class_="smaller09").text[5:]
+
+  for item in result:
+    picture = item.find("img").get("src").replace(" ", "")
+    title = item.find("div", class_="filmtitle").text
+    movie_id = item.find("div", class_="filmtitle").find("a").get("href").replace("/", "").replace("movie", "")
+    hyperlink = "http://www.atmovies.com.tw" + item.find("div", class_="filmtitle").find("a").get("href")
+    show = item.find("div", class_="runtime").text.replace("上映日期：", "")
+    show = show.replace("片長：", "")
+    show = show.replace("分", "")
+    showDate = show[0:10]
+    showLength = show[13:]
+
+    doc = {
+        "title": title,
+        "picture": picture,
+        "hyperlink": hyperlink,
+        "showDate": showDate,
+        "showLength": showLength,
+        "lastUpdate": lastUpdate
+      }
+
+    db = firestore.client()
+    doc_ref = db.collection("電影").document(movie_id)
+    doc_ref.set(doc)    
+  return "近期上映電影已爬蟲及存檔完畢，網站最近更新日期為：" + lastUpdate 
+
+@app.route("/searchQ", methods=["POST", "GET"])
+def searchQ():
+    if request.method == "POST":
+        # 1. 取得使用者在表單輸入的片名
+        MovieTitle = request.form["MovieTitle"]
+        info = ""
+        
+        # 2. 連接 Firebase
+        db = firestore.client()
+        collection_ref = db.collection("電影")
+        
+        # 3. 讀取所有電影資料，並按上映日期排序
+        docs = collection_ref.order_by("showDate").get()
+        
+        found = False
+        for doc in docs:
+            movie_data = doc.to_dict()
+            # 4. 判斷輸入的關鍵字是否在電影標題中
+            if MovieTitle in movie_data.get("title", ""):
+                info += "片名：" + movie_data.get("title") + "<br>"
+                info += "影片介紹：" + movie_data.get("hyperlink") + "<br>"
+                info += "片長：" + movie_data.get("showLength") + " 分鐘<br>"
+                info += "上映日期：" + movie_data.get("showDate") + "<br><br>"
+                found = True
+        
+        if not found:
+            info = f"抱歉，找不到包含「{MovieTitle}」的電影。<br><br>"
+            
+        info += '<a href="/searchQ">重新查詢</a> | <a href="/">回首頁</a>'
+        return info
+    else:
+        # 如果是 GET 請求（剛進網頁時），顯示輸入框頁面
+        return render_template("input.html")
 
 if __name__ == "__main__":
     app.run()
