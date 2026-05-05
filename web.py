@@ -41,6 +41,8 @@ def index():
     link += "<br><a href=/read>讀取Firestore資料(根據lab遞減排序，取前四筆)</a><br>"
     link += "<br><a href=/movie>讀取開眼電影即將上映影片，寫入Firestore</a><br>"
     link += "<a href=/searchQ>搜尋電影(Firestore查詢)</a><hr>"
+    link += "<a href=/road>查詢台中市易肇事路口</a><hr>"
+    link += "<a href=/weather>查詢縣市天氣預報</a><hr>"
     return link
 
 
@@ -248,6 +250,67 @@ def movie():
     doc_ref = db.collection("電影").document(movie_id)
     doc_ref.set(doc)    
   return "近期上映電影已爬蟲及存檔完畢，網站最近更新日期為：" + lastUpdate 
+
+@app.route("/road", methods=["GET", "POST"])
+def road():
+    url = "https://newdatacenter.taichung.gov.tw/api/v1/no-auth/resource.download?rid=a1b899c0-511f-4e3d-b22b-814982a97e41"
+    results_list = []
+    road_query = ""
+
+    # 當使用者按下「查詢」按鈕（發送 POST 請求）時執行
+    if request.method == "POST":
+        road_query = request.form.get("RoadName") # 取得網頁輸入框的內容
+        
+        try:
+            # 爬取政府開放資料並轉為 JSON 格式
+            data = requests.get(url)
+            json_data = json.loads(data.text)
+            
+            # 過濾符合路名的資料並整理成清單
+            for item in json_data:
+                if road_query and road_query in item["路口名稱"]:
+                    results_list.append({
+                        "location": item["路口名稱"],
+                        "count": item["總件數"],
+                        "reason": item["主要肇因"]
+                    })
+        except Exception as e:
+            print(f"資料讀取失敗: {e}")
+
+    # 將結果送到前端網頁渲染
+    return render_template("traffic.html", results=results_list, road_name=road_query)
+
+@app.route("/weather", methods=["GET", "POST"])
+def weather():
+    city = ""
+    weather_info = None
+    
+    if request.method == "POST":
+        city = request.form.get("city").replace("台", "臺")
+        token = "rdec-key-123-45678-011121314" # 建議換成你申請的真實 Token
+        url = f"https://opendata.cwa.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization={token}&format=JSON&locationName={city}"
+        
+        try:
+            data = requests.get(url)
+            json_data = json.loads(data.text)
+            
+            # 解析資料
+            location_data = json_data["records"]["location"][0]
+            weather_state = location_data["weatherElement"][0]["time"][0]["parameter"]["parameterName"]
+            rain_chance = location_data["weatherElement"][1]["time"][0]["parameter"]["parameterName"]
+            temp_min = location_data["weatherElement"][2]["time"][0]["parameter"]["parameterName"]
+            temp_max = location_data["weatherElement"][4]["time"][0]["parameter"]["parameterName"]
+            
+            weather_info = {
+                "city": city,
+                "state": weather_state,
+                "rain": rain_chance,
+                "temp": f"{temp_min}~{temp_max} °C"
+            }
+        except Exception as e:
+            print(f"氣象資料抓取失敗: {e}")
+
+    return render_template("weather.html", info=weather_info)
 
 @app.route("/searchQ", methods=["POST", "GET"])
 def searchQ():

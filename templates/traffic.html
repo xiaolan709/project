@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>易肇事路口查詢</title>
+    <style>
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>台中市易肇事路口查詢系統</h1>
+    
+    <!-- 表單提交到 /road 路由 -->
+    <form method="POST" action="/road">
+        請輸入路名關鍵字：
+        <input type="text" name="RoadName" value="{{ road_name }}" required>
+        <button type="submit">查詢</button>
+    </form>
+
+    <hr>
+
+    {% if road_name %}
+        <h3>針對「{{ road_name }}」的查詢結果：</h3>
+        {% if results %}
+            <table>
+                <tr>
+                    <th>路口名稱</th>
+                    <th>事故總件數</th>
+                    <th>主要肇因</th>
+                </tr>
+                {% for item in results %}
+                <tr>
+                    <td>{{ item.location }}</td>
+                    <td>{{ item.count }} 件</td>
+                    <td>{{ item.reason }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        {% else %}
+            <p style="color: red;">抱歉，查無相關資料！</p>
+        {% endif %}
+    {% endif %}
+
+    <br>
+    <a href="/">回首頁</a>
+</body>
+</html>
