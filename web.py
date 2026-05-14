@@ -19,9 +19,9 @@ else:
 
 firebase_admin.initialize_app(cred)
 
-
-from flask import Flask, render_template,request
+from flask import Flask, render_template,request, make_response, jsonify
 from datetime import datetime
+import firebase_admin
 import random
 
 app = Flask(__name__) # 建立一個網站應用程式
@@ -39,11 +39,34 @@ def index():
     link += "<a href=/cup>擲茭</a><hr>"
     link += "<a href=/search>查詢老師</a><hr>"
     link += "<br><a href=/read>讀取Firestore資料(根據lab遞減排序，取前四筆)</a><br>"
-    link += "<br><a href=/movie>讀取開眼電影即將上映影片，寫入Firestore</a><br>"
+    link += "<br><a href=/movie>開眼電影即將上映影片，寫入Firestore</a><br>"
     link += "<a href=/searchQ>搜尋電影(Firestore查詢)</a><hr>"
     link += "<a href=/road>查詢台中市易肇事路口</a><hr>"
     link += "<a href=/weather>查詢縣市天氣預報</a><hr>"
+    link += "<a href=/webhook>本週新片進DB</a><hr>"
     return link
+
+@app.route("/webhook", methods=["POST"])
+def webhook():
+    # build a request object
+    req = request.get_json(force=True)
+    # fetch queryResult from json
+    action =  req["queryResult"]["action"]
+    if (action == "rateChoice"):
+        rate =  req["queryResult"]["parameters"]["rate"]
+        info = "我是黃筱嵐開發的電影聊天機器人,您選擇的電影分級是：" + rate + "，相關電影：\n"
+
+        db = firestore.client()
+        collection_ref = db.collection("本週新片含分級")
+        docs = collection_ref.get()
+        result = ""
+        for doc in docs:
+            dict = doc.to_dict()
+            if rate in dict["rate"]:
+                result += "片名：" + dict["title"] + "\n"
+                result += "介紹：" + dict["hyperlink"] + "\n\n"
+        info += result
+    return make_response(jsonify({"fulfillmentText": info}))
 
 
 @app.route("/search", methods=["GET", "POST"])
