@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>天氣預報查詢</title>
+</head>
+<body>
+    <h1>縣市天氣預報查詢</h1>
+    <form method="POST">
+        請輸入縣市名稱 (如：台中市)：
+        <input type="text" name="city" required>
+        <button type="submit">查詢</button>
+    </form>
+
+    <hr>
+
+    {% if info %}
+        <h2>{{ info.city }} 天氣預報結果：</h2>
+        <p>今日天氣狀況：<strong>{{ info.state }}</strong></p>
+        <p>降雨機率：<strong>{{ info.rain }} %</strong></p>
+        <p>預估氣溫：<strong>{{ info.temp }}</strong></p>
+    {% endif %}
+
+    <br>
+    <a href="/">回首頁</a>
+</body>
+</html>
