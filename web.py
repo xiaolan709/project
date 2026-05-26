@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 from google import genai
+from google.genai import types
 
 import os
 import json
@@ -105,6 +106,24 @@ def webhook():
                 result += "片名：" + dict["title"] + "\n"
                 result += "介紹：" + dict["hyperlink"] + "\n\n"
         info += result
+
+    elif (action == "input.unknown"):
+        # info =  req["queryResult"]["queryText"]
+
+        ai_config = types.GenerateContentConfig(
+            max_output_tokens = 500
+        )
+
+        # 每次使用者拜訪該路徑時，直接使用全域的 client 呼叫模型
+        response = client.models.generate_content(
+            model='gemini-3.5-flash',
+            contents=req["queryResult"]["queryText"],
+            config=ai_config,
+        )
+        
+        # 回傳生成的文字
+        return response.text
+
     return make_response(jsonify({"fulfillmentText": info}))
 
 
