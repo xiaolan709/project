@@ -114,7 +114,7 @@ def webhook():
 
     elif (action == "input.unknown"):
         # 設定 Gemini AI 配置
-        ai_config = genai.types.GenerateContentConfig(
+        ai_config = types.GenerateContentConfig(
             max_output_tokens=500
         )
 
