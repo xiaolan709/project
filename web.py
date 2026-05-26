@@ -79,7 +79,7 @@ def ask():
 def AI():
     # 每次使用者拜訪該路徑時，直接使用全域的 client 呼叫模型
     response = client.models.generate_content(
-        model='gemini-3.5-flash',
+        model='gemini-2.5-flash',
         contents='我想查詢靜宜大學資管系的評價？',
     )
     
@@ -120,7 +120,7 @@ def webhook():
 
         # 使用正確的模型名稱呼叫 Gemini
         response = client.models.generate_content(
-            model='gemini-1.5-flash',  # 已將 3.5 改為 1.5 或 2.5
+            model='gemini-2.5-flash',  # 已將 3.5 改為 1.5 或 2.5
             contents=req["queryResult"]["queryText"],
             config=ai_config,
         )
