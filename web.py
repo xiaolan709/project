@@ -90,10 +90,15 @@ def AI():
 def webhook():
     # build a request object
     req = request.get_json(force=True)
+    
     # fetch queryResult from json
-    action =  req["queryResult"]["action"]
+    action = req["queryResult"]["action"]
+    
+    # 先宣告一個預設的 info 變數，避免發生意外時變數未定義
+    info = ""
+
     if (action == "rateChoice"):
-        rate =  req["queryResult"]["parameters"]["rate"]
+        rate = req["queryResult"]["parameters"]["rate"]
         info = "我是黃筱嵐開發的電影聊天機器人,您選擇的電影分級是：" + rate + "，相關電影：\n"
 
         db = firestore.client()
@@ -108,22 +113,22 @@ def webhook():
         info += result
 
     elif (action == "input.unknown"):
-        # info =  req["queryResult"]["queryText"]
-
-        ai_config = types.GenerateContentConfig(
-            max_output_tokens = 500
+        # 設定 Gemini AI 配置
+        ai_config = genai.types.GenerateContentConfig(
+            max_output_tokens=500
         )
 
-        # 每次使用者拜訪該路徑時，直接使用全域的 client 呼叫模型
+        # 使用正確的模型名稱呼叫 Gemini
         response = client.models.generate_content(
-            model='gemini-3.5-flash',
+            model='gemini-1.5-flash',  # 已將 3.5 改為 1.5 或 2.5
             contents=req["queryResult"]["queryText"],
             config=ai_config,
         )
         
-        # 回傳生成的文字
-        return response.text
+        # 將 AI 生成的文字指定給 info，統一由底下的 make_response 回傳給 Dialogflow
+        info = response.text
 
+    # 統一格式：不論走哪一個分支，最後都包成 Dialogflow 看得懂的 JSON 格式回傳
     return make_response(jsonify({"fulfillmentText": info}))
 
 
