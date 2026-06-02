@@ -47,8 +47,8 @@ def index():
     link += "<a href=/road>查詢台中市易肇事路口</a><hr>"
     link += "<a href=/weather>查詢縣市天氣預報</a><hr>"
     link += "<a href=/rate>本週新片進DB</a><hr>"
-    link += "<a href=/demo>聊天機器人</a><hr>"
-    link += "<a href=/AI>ai聊天機器人</a><hr>"
+    link += "<a href=/demo>Dialogfiow聊天機器人</a><hr>"
+    link += "<a href=/AI>AI機器人問靜宜資管系</a><hr>"
     link += "<a href=/ask>詢問gemini</a><hr>"
     return link
 
