@@ -64,7 +64,7 @@ def ask():
             return "請輸入內容", 400
         try:
             response = client.models.generate_content(
-                model='gemini-3.5-flash',
+                model='gemini-3.1-flash-lite',
                 contents=user_prompt,
             )
             return response.text
@@ -79,7 +79,7 @@ def ask():
 def AI():
     # 每次使用者拜訪該路徑時，直接使用全域的 client 呼叫模型
     response = client.models.generate_content(
-        model='gemini-2.5-flash',
+        model='gemini-3.1-flash-lite',
         contents='我想查詢靜宜大學資管系的評價？',
     )
     
@@ -113,22 +113,27 @@ def webhook():
         info += result
 
     elif (action == "input.unknown"):
-        # 設定 Gemini AI 配置
-        ai_config = types.GenerateContentConfig(
-            max_output_tokens=500
+        instruction_text = (
+            "你是一個熱心且知識豐富的專業智慧助理。"
+            "對於使用者的提問，請回覆重點的關鍵字，不要重述問題。"         
         )
 
-        # 使用正確的模型名稱呼叫 Gemini
+
+        ai_config = types.GenerateContentConfig(
+            max_output_tokens=500, 
+            system_instruction=instruction_text
+        )
         response = client.models.generate_content(
-            model='gemini-2.5-flash',  # 已將 3.5 改為 1.5 或 2.5
+            model='gemini-3.1-flash-lite', 
             contents=req["queryResult"]["queryText"],
             config=ai_config,
         )
-        
-        # 將 AI 生成的文字指定給 info，統一由底下的 make_response 回傳給 Dialogflow
-        info = response.text
 
-    # 統一格式：不論走哪一個分支，最後都包成 Dialogflow 看得懂的 JSON 格式回傳
+        if response.text:
+            info = response.text
+        else:
+            info = "抱歉，我現在無法生成回應，請稍後再試。"
+
     return make_response(jsonify({"fulfillmentText": info}))
 
 
